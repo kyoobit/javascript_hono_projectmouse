@@ -1,0 +1,36 @@
+# https://developers.cloudflare.com/workers/wrangler/configuration/
+name = "projectmouse"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# https://developers.cloudflare.com/workers/wrangler/configuration/#types-of-routes
+routes = [
+    { pattern = "www.projectmouse.net", custom_domain = true },
+]
+
+# compatibility_flags = [ "nodejs_compat" ]
+
+# [vars]
+# MY_VAR = "my-variable"
+
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# https://developers.cloudflare.com/workers/wrangler/configuration/#r2-buckets
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "projectmouse-r2-production"
+preview_bucket_name = "public"
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "my-database"
+# database_id = ""
+
+# [ai]
+# binding = "AI"
+
+# [observability]
+# enabled = true
+# head_sampling_rate = 1
