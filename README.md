@@ -32,6 +32,10 @@ Create and use a local R2 storage bucket named "public" (.wrangler/state/v3/r2/p
 npx wrangler r2 object put public/img/Mouse_ss120_1024x1024.gif --file public/img/Mouse_ss120_1024x1024.gif --local
 npx wrangler r2 object put projectmouse-r2-production/img/Mouse_ss120_1024x1024.gif --file public/img/Mouse_ss120_1024x1024.gif
 ```
+```shell
+npx wrangler r2 object put public/css/main.css --file public/css/main.css --local
+npx wrangler r2 object put projectmouse-r2-production/css/main.css --file public/css/main.css
+```
 
 Run the development server:
 
@@ -43,7 +47,8 @@ Test requests:
 
 ```shell
 curl -i http://localhost:8787/
-curl -i http://localhost:8787/img/Mouse_ss120_1024x1024.gif
+curl -vso /dev/null http://localhost:8787/img/Mouse_ss120_1024x1024.gif
+curl -vso /dev/null http://localhost:8787/css/main.css
 ```
 
 Deploy the service to Cloudflare:
