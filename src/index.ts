@@ -3,6 +3,45 @@ import { html, raw } from 'hono/html';
 
 const app = new Hono();
 
+app.use('*', async (c, next) => {
+    await next()
+
+    const logging_endpoint = c.env.LOGGING_ENDPOINT;
+
+    // Log this information
+    const log_payload = {
+        domain: c.req.header('host'),
+        path: c.req.path,
+        method: c.req.method,
+        ip: c.req.header('cf-connecting-ip'),
+        user_agent: c.req.header('user-agent'),
+        timestamp: new Date().toISOString(),
+    }
+
+    // Log the request to an external API location
+    if (logging_endpoint) {
+        const log_promise = fetch(logging_endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': `cf-worker-${c.req.header('host')}`,
+            },
+            body: JSON.stringify(log_payload),
+        })
+        .then(async res => {
+            console.log('Logging API POST status:', res.status);
+            if (!res.ok) {
+                console.error('Logging API failed response:', await res.text());
+            }
+        })
+        .catch((err) => {
+            console.error('Logging API POST fetch error:', err);
+        });
+
+        c.executionCtx?.waitUntil(log_promise);
+    }
+})
+
 app.get('/:dir{(css|img)}/:key', async (c) => {
     const key = `${c.req.param("dir")}/${c.req.param("key")}`;
     const object = await c.env.R2_BUCKET.get(key);
@@ -10,19 +49,27 @@ app.get('/:dir{(css|img)}/:key', async (c) => {
     if (!object) return c.notFound();
 
     const data = await object.arrayBuffer();
-    const contentType = object.httpMetadata?.contentType || '';
 
-    const cacheControl = (c.req.param("dir") == 'img') ? 'max-age=31536000' : 'max-age=900';
+    // HTTP response headers
+    let headers = {};
 
-    return c.body(data, 200, {
-        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
-        'Cache-Control': cacheControl,
-        'Content-Type': contentType,
-        'ETag': object.httpEtag,
-    });
+    // Cache Control HTTP response header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+    headers['Cache-Control'] = (c.req.param("dir") == 'img') ? 'max-age=31536000' : 'max-age=900';
+
+    // Content Type HTTP response header
+    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+    headers['Content-Type'] = object.httpMetadata?.contentType || '';
+
+    // ETag HTTP response header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+    headers['ETag'] = object.httpEtag;
+
+    // https://hono.dev/docs/helpers/html
+    return c.body(data, 200, headers);
 });
 
-app.get('/', async (c) => {
+app.get('/', (c) => {
 
     // Data used in the HTML content template
     const data = {
@@ -77,7 +124,7 @@ app.get('/', async (c) => {
     // echo "sha384-${hash}"
     let script_integrity_hashes = [
         // 'sha384-<HASH VALUE>',
-    ].join(' ')
+    ].join(' ');
 
     // Content Security Policy (CSP) HTTP response header
     // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CSP
@@ -92,7 +139,7 @@ app.get('/', async (c) => {
         "base-uri 'none'", // block all uses of the <base> element to set a base URI
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/require-trusted-types-for
         "require-trusted-types-for 'script'",
-    ].join('; ')
+    ].join('; ');
 
     // MIME types HTTP response header
     // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/MIME_types

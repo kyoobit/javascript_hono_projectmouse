@@ -12,6 +12,7 @@ routes = [
 
 # [vars]
 # MY_VAR = "my-variable"
+# LOGGING_ENDPOINT = <--- npm run secret put LOGGING_ENDPOINT
 
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"

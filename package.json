@@ -2,6 +2,7 @@
   "name": "javascript_hono_projectmouse",
   "scripts": {
     "dev": "wrangler dev",
+    "secret": "wrangler secret",
     "deploy": "wrangler deploy --minify"
   },
   "dependencies": {
@@ -9,6 +10,6 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
-    "wrangler": "^3.96.0"
+    "wrangler": "^4.13.2"
   }
 }
