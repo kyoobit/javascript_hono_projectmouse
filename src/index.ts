@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import { html, raw } from 'hono/html';
 
+import { homepage } from '@templates/homepage';
+import { getSecureHeaders } from '@helpers/headers';
+
 const app = new Hono();
 
 app.use('*', async (c, next) => {
@@ -81,85 +84,24 @@ app.get('/', (c) => {
     };
 
     // HTML content template
-    const content = html`<!doctype html>
-<html lang="en">
-<head>
-    <title>${data.title}</title>
-    <link rel="canonical" href="https://${data.domain}/" />
-    <meta name="description" content="${data.description}">
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="/css/main.css" 
-        integrity="sha384-4NUWB6CfrGJR3WLnImEHFfhxbWQtSRwCF5a5ivg3z6rBvaVokGuVwhu8r/xCCo67" />
-</head>
-<body>
-    <div id="container">
-        <div id="article">
-            <img id="main"
-                src="${data.image}"
-                alt="${data.description}"
-                integrity="${data.image_integrity}"
-                />
-        </div>
-    </div>
-</body>
-</html>
-`
+    const content = homepage(data);
 
-    // HTTP response headers
-    let headers = {}
+    // HTTP headers helper
+    const headers = getSecureHeaders({
+        // Subresource Integrity
+        // https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+        // hash=$(cat FILENAME.js | openssl dgst -sha384 -binary | openssl base64 -A)
+        // hash=$(shasum -b -a 384 FILENAME.js | awk '{ print $1 }' | xxd -r -p | base64)
+        // echo "sha384-${hash}"
+        script_hashes: [
+            // 'sha384-<HASH VALUE>',
+        ],
+    });
 
     // Cross-Origin Resource Sharing (CORS) HTTP response headers
     // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CORS
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
     //headers['Access-Control-Allow-Origin'] = `https://${data.domain}/`;
-
-    // https://developer.mozilla.org/en-US/observatory/analyze
-
-    // Subresource Integrity
-    // https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
-    // hash=$(cat FILENAME.js | openssl dgst -sha384 -binary | openssl base64 -A)
-    // hash=$(shasum -b -a 384 FILENAME.js | awk '{ print $1 }' | xxd -r -p | base64)
-    // echo "sha384-${hash}"
-    let script_integrity_hashes = [
-        // 'sha384-<HASH VALUE>',
-    ].join(' ');
-
-    // Content Security Policy (CSP) HTTP response header
-    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CSP
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
-    // https://csp-evaluator.withgoogle.com
-    headers['Content-Security-Policy'] = [
-        "default-src 'self' https:", // load resources that are from the same-origin as the document using https only
-        //`image-src 'self' ${data.domain}`,
-        //`style-src 'self' ${data.domain}`,
-        `script-src 'strict-dynamic' https: ${script_integrity_hashes}`, // 'strict-dynamic': Allow trusted scripts to load additional scripts
-        "object-src 'none'", // block all <object> and <embed> resources
-        "base-uri 'none'", // block all uses of the <base> element to set a base URI
-        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/require-trusted-types-for
-        "require-trusted-types-for 'script'",
-    ].join('; ');
-
-    // MIME types HTTP response header
-    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/MIME_types
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
-    headers['X-Content-Type-Options'] = 'nosniff';
-
-    // Clickjacking HTTP response header
-    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Clickjacking
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
-    headers['X-Frame-Options'] = 'DENY';
-
-    // Referrer policy HTTP response header
-    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Referrer_policy
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-    headers['Referrer-Policy'] = 'same-origin'; // send the Referrer header, but only on same-origin requests
-
-    // Cross-Origin Resource Policy (CORP) HTTP response header
-    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CORP
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy
-    headers['Cross-Origin-Resource-Policy'] = 'same-origin'; // limits resource access to requests coming from the same origin
 
     // https://hono.dev/docs/helpers/html
     return c.html(content, 200, headers);
