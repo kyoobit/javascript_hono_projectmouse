@@ -4,8 +4,9 @@ export function homepage(data: {
     title: string;
     domain: string;
     description: string;
-    image: string;
-    image_integrity: string;
+    image: object;
+    css: object;
+    nonce: string;
 }) {
     return html`<!doctype html>
 <html lang="en">
@@ -16,16 +17,16 @@ export function homepage(data: {
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="/css/main.css" 
-        integrity="sha384-4NUWB6CfrGJR3WLnImEHFfhxbWQtSRwCF5a5ivg3z6rBvaVokGuVwhu8r/xCCo67" />
+    <link rel="stylesheet" type="text/css" href="${data.css.path}" 
+        integrity="${data.css.integrity}" />
 </head>
 <body>
     <div id="container">
         <div id="article">
             <img id="main"
-                src="${data.image}"
+                src="${data.image.path}"
                 alt="${data.description}"
-                integrity="${data.image_integrity}"
+                integrity="${data.image.integrity}"
                 />
         </div>
     </div>
