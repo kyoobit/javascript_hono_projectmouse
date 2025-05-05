@@ -10,6 +10,7 @@ function generateNonce() {
     return btoa(Math.random().toString(36).substring(2, 15));
 }
 
+// Middleware to log requests to an API
 app.use('*', async (c, next) => {
     await next()
 
@@ -49,6 +50,7 @@ app.use('*', async (c, next) => {
     }
 })
 
+// Handle generic directory level mapping to object storage
 app.get('/:dir{(css|img)}/:key', async (c) => {
     const key = `${c.req.param("dir")}/${c.req.param("key")}`;
     const object = await c.env.R2_BUCKET.get(key);
@@ -76,6 +78,38 @@ app.get('/:dir{(css|img)}/:key', async (c) => {
     return c.body(data, 200, headers);
 });
 
+// Handle specific file mappings to object storage
+app.on('GET', [
+    '/favicon.ico',
+    '/robots.txt',
+], async (c) => {
+    const path = c.req.path.slice(1);
+    const object = await c.env.R2_BUCKET.get(path);
+
+    if (!object) return c.notFound();
+
+    const data = await object.arrayBuffer();
+
+    // HTTP response headers
+    let headers = {};
+
+    // Cache Control HTTP response header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+    headers['Cache-Control'] = 'max-age=900';
+
+    // Content Type HTTP response header
+    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+    headers['Content-Type'] = object.httpMetadata?.contentType || 'text/plain';
+
+    // ETag HTTP response header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+    headers['ETag'] = object.httpEtag;
+
+    // https://hono.dev/docs/helpers/html
+    return c.body(data, 200, headers);
+});
+
+// Handle the root index
 app.get('/', (c) => {
 
     // Data used in the HTML content template
