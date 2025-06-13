@@ -1,6 +1,6 @@
 # JavaScript Hono Projectmouse
 
-A simple single page site, build on the JavaScript Hono framework to create an endpoint using Cloudflare's serverless Workers and R2 object storage platform services.
+A simple single page site, built with the JavaScript Hono framework to create an endpoint using Cloudflare's serverless Workers and R2 object storage platform services.
 
 See Also:
 
